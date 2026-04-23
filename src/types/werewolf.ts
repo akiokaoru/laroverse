@@ -16,11 +16,13 @@ export interface GameState {
   currentTurn: number;
   nightActions: {
     seerTarget?: string;
+    seerCenterTargets?: [number, number];
     robberTarget?: string;
     troublemakerTargets?: [string, string];
   };
   votes: Record<string, string>;
   winner?: 'werewolves' | 'villagers';
+  centerCards: Role[];
 }
 
 export interface GameConfig {

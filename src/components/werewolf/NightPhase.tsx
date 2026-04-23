@@ -14,6 +14,7 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
   const [currentRoleIndex, setCurrentRoleIndex] = useState(0)
   const [selectedTarget, setSelectedTarget] = useState('')
   const [showSeerResult, setShowSeerResult] = useState(false)
+  const [selectedCenterCards, setSelectedCenterCards] = useState<number[]>([])
 
   const currentPlayer = gameState.players.find(p => p.id === currentPlayerId)
   const rolesInOrder = ['werewolf', 'seer', 'robber', 'troublemaker', 'insomniac']
@@ -49,12 +50,21 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
   }
 
   const handleAction = () => {
-    if (currentRole === 'seer' && selectedTarget) {
-      if (!showSeerResult) {
-        setShowSeerResult(true)
-        return
+    if (currentRole === 'seer') {
+      if (selectedCenterCards.length > 0) {
+        if (!showSeerResult) {
+          setShowSeerResult(true)
+          return
+        }
+        // Seer selected center cards
+        onAction('seerCenterTargets', selectedCenterCards as [number, number])
+      } else if (selectedTarget) {
+        if (!showSeerResult) {
+          setShowSeerResult(true)
+          return
+        }
+        onAction('seerTarget', selectedTarget)
       }
-      onAction('seerTarget', selectedTarget)
     } else if (currentRole === 'robber' && selectedTarget) {
       onAction('robberTarget', selectedTarget)
     } else if (currentRole === 'troublemaker' && selectedTarget) {
@@ -65,6 +75,7 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
       setCurrentRoleIndex(currentRoleIndex + 1)
       setSelectedTarget('')
       setShowSeerResult(false)
+      setSelectedCenterCards([])
     } else {
       onPhaseComplete()
     }
@@ -132,15 +143,22 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
         <div className="mb-6">
           <p className="text-white mb-2">Select a target:</p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {gameState.players.map(player => (
+            {gameState.players.filter(player => {
+              if (currentRole === 'seer') return player.role !== 'seer'
+              return true
+            }).map(player => (
               <button
                 key={player.id}
-                onClick={() => setSelectedTarget(player.id)}
+                onClick={() => {
+                  setSelectedTarget(player.id)
+                  setSelectedCenterCards([])
+                }}
+                disabled={currentRole === 'seer' && showSeerResult}
                 className={`p-3 rounded-lg transition-colors ${
                   selectedTarget === player.id
                     ? 'bg-white text-night'
                     : 'bg-white/20 text-white hover:bg-white/30'
-                }`}
+                } ${currentRole === 'seer' && showSeerResult ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {player.name}
                 {currentRole === 'seer' && selectedTarget === player.id && showSeerResult && (
@@ -154,12 +172,46 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
         </div>
       )}
 
+      {currentRole === 'seer' && (
+        <div className="mb-6">
+          <p className="text-white mb-2">Or select 2 center cards to view:</p>
+          <div className="grid grid-cols-3 gap-3">
+            {gameState.centerCards.map((role, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  if (selectedCenterCards.includes(index)) {
+                    setSelectedCenterCards(selectedCenterCards.filter(i => i !== index))
+                  } else if (selectedCenterCards.length < 2) {
+                    setSelectedCenterCards([...selectedCenterCards, index])
+                    setSelectedTarget('')
+                  }
+                }}
+                disabled={currentRole === 'seer' && showSeerResult}
+                className={`p-3 rounded-lg transition-colors ${
+                  selectedCenterCards.includes(index)
+                    ? 'bg-white text-night'
+                    : 'bg-white/20 text-white hover:bg-white/30'
+                } ${currentRole === 'seer' && showSeerResult ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                Center {index + 1}
+                {selectedCenterCards.includes(index) && showSeerResult && (
+                  <span className="ml-2 text-sm text-night/80">
+                    ({role})
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex gap-4">
         <button
           onClick={handleAction}
           disabled={false}
           className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-colors ${
-            selectedTarget || (currentRole !== 'seer' && currentRole !== 'robber' && currentRole !== 'troublemaker')
+            selectedTarget || selectedCenterCards.length === 2 || (currentRole !== 'seer' && currentRole !== 'robber' && currentRole !== 'troublemaker')
               ? 'bg-white text-night hover:bg-white/90'
               : 'bg-white/20 text-white/50 cursor-not-allowed'
           }`}

@@ -6,11 +6,11 @@ import { GameConfig, GameState, Player, Role } from '@/types/werewolf'
 const getRolesForPlayerCount = (playerCount: number): Role[] => {
   switch (playerCount) {
     case 3:
-      return ['werewolf', 'seer', 'robber']
+      return ['werewolf', 'seer', 'robber', 'villager', 'villager', 'villager']
     case 4:
-      return ['werewolf', 'werewolf', 'seer', 'robber']
+      return ['werewolf', 'werewolf', 'seer', 'robber', 'villager', 'villager']
     case 5:
-      return ['werewolf', 'werewolf', 'seer', 'robber', 'troublemaker']
+      return ['werewolf', 'werewolf', 'seer', 'robber', 'troublemaker', 'villager']
     case 6:
       return ['werewolf', 'werewolf', 'seer', 'robber', 'troublemaker', 'insomniac']
     default:
@@ -34,6 +34,7 @@ export const useWerewolfGame = () => {
     currentTurn: 0,
     nightActions: {},
     votes: {},
+    centerCards: [],
   })
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0)
 
@@ -48,12 +49,16 @@ export const useWerewolfGame = () => {
       isAlive: true,
     }))
 
+    // Assign remaining roles to center cards (3 center cards)
+    const centerCards = shuffledRoles.slice(playerNames.length, playerNames.length + 3)
+
     setGameState({
       phase: 'night',
       players,
       currentTurn: 0,
       nightActions: {},
       votes: {},
+      centerCards,
     })
   }, [])
 
@@ -64,6 +69,7 @@ export const useWerewolfGame = () => {
       currentTurn: 0,
       nightActions: {},
       votes: {},
+      centerCards: [],
     })
   }, [])
 

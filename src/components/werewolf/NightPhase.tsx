@@ -13,6 +13,7 @@ interface NightPhaseProps {
 export default function NightPhase({ gameState, currentPlayerId, onAction, onPhaseComplete }: NightPhaseProps) {
   const [currentRoleIndex, setCurrentRoleIndex] = useState(0)
   const [selectedTarget, setSelectedTarget] = useState('')
+  const [showSeerResult, setShowSeerResult] = useState(false)
 
   const currentPlayer = gameState.players.find(p => p.id === currentPlayerId)
   const rolesInOrder = ['werewolf', 'seer', 'robber', 'troublemaker', 'insomniac']
@@ -49,20 +50,50 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
 
   const handleAction = () => {
     if (currentRole === 'seer' && selectedTarget) {
+      if (!showSeerResult) {
+        setShowSeerResult(true)
+        return
+      }
       onAction('seerTarget', selectedTarget)
     } else if (currentRole === 'robber' && selectedTarget) {
       onAction('robberTarget', selectedTarget)
     } else if (currentRole === 'troublemaker' && selectedTarget) {
-      // For simplicity, just store the first target
       onAction('troublemakerTargets', [selectedTarget, ''])
     }
     
     if (currentRoleIndex < rolesInOrder.length - 1) {
       setCurrentRoleIndex(currentRoleIndex + 1)
       setSelectedTarget('')
+      setShowSeerResult(false)
     } else {
       onPhaseComplete()
     }
+  }
+
+  const canSelectTarget = () => {
+    if (currentRole === 'seer') return !selectedTarget
+    if (currentRole === 'robber') return !selectedTarget
+    if (currentRole === 'troublemaker') return !selectedTarget
+    return false
+  }
+
+  const hasSelectedTarget = () => {
+    return selectedTarget !== ''
+  }
+
+  const canConfirmAction = () => {
+    // Can confirm action if it's the last role or if action has been taken
+    return currentRoleIndex === rolesInOrder.length - 1 || 
+           (currentRole !== 'seer' && currentRole !== 'robber' && currentRole !== 'troublemaker') ||
+           (currentRole === 'seer' && selectedTarget) ||
+           (currentRole === 'robber' && selectedTarget) ||
+           (currentRole === 'troublemaker' && selectedTarget)
+  }
+
+  const getSelectedTargetRole = () => {
+    if (!selectedTarget) return null
+    const targetPlayer = gameState.players.find(p => p.id === selectedTarget)
+    return targetPlayer ? targetPlayer.role : null
   }
 
   const handleSkip = () => {
@@ -112,6 +143,11 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
                 }`}
               >
                 {player.name}
+                {currentRole === 'seer' && selectedTarget === player.id && showSeerResult && (
+                  <span className="ml-2 text-sm text-night/80">
+                    ({getSelectedTargetRole()})
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -121,14 +157,14 @@ export default function NightPhase({ gameState, currentPlayerId, onAction, onPha
       <div className="flex gap-4">
         <button
           onClick={handleAction}
-          disabled={!selectedTarget && (currentRole === 'seer' || currentRole === 'robber' || currentRole === 'troublemaker')}
+          disabled={false}
           className={`flex-1 py-3 px-6 rounded-lg font-semibold transition-colors ${
             selectedTarget || (currentRole !== 'seer' && currentRole !== 'robber' && currentRole !== 'troublemaker')
               ? 'bg-white text-night hover:bg-white/90'
               : 'bg-white/20 text-white/50 cursor-not-allowed'
           }`}
         >
-          {currentRole === 'insomniac' ? 'View Card' : 'Confirm Action'}
+          {currentRole === 'seer' && !showSeerResult ? 'View Card' : currentRole === 'insomniac' ? 'View Card' : 'Confirm Action'}
         </button>
         
         <button

@@ -605,6 +605,9 @@ video {
 .mt-6 {
   margin-top: 1.5rem;
 }
+.ml-2 {
+  margin-left: 0.5rem;
+}
 .block {
   display: block;
 }
@@ -871,6 +874,9 @@ video {
 }
 .text-white\/40 {
   color: rgb(255 255 255 / 0.4);
+}
+.text-night\/80 {
+  color: rgb(31 41 55 / 0.8);
 }
 .placeholder-white\/50::-moz-placeholder {
   color: rgb(255 255 255 / 0.5);
